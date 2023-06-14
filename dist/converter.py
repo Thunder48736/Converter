@@ -24,34 +24,82 @@ def convert_data(input_file, output_file):
 
     data = read_file(input_file)
 
-    if input_extension == '.xml':
-        if output_extension == '.json':
-            converted_data = json.dumps(xmltodict.parse(data), indent=4)
-        elif output_extension == '.yaml':
-            converted_data = yaml.dump(xmltodict.parse(data), indent=4)
-    elif input_extension == '.json':
-        if output_extension == '.xml':
-            converted_data = xmltodict.unparse(json.loads(data), pretty=True)
-        elif output_extension == '.yaml':
-            converted_data = yaml.dump(json.loads(data), indent=4)
-    elif input_extension == '.yaml' or input_extension == '.yml':
-        if output_extension == '.xml':
-            converted_data = xmltodict.unparse(yaml.safe_load(data), pretty=True)
-        elif output_extension == '.json':
-            converted_data = json.dumps(yaml.safe_load(data), indent=4)
-    else:
-        raise ValueError(f"Unsupported file format: {input_extension}")
+    import os
+    import xmltodict
+    import json
+    import yaml
+    import sys
 
-    write_file(output_file, converted_data)
+    def convert_data(input_file, output_file):
+        _, input_extension = os.path.splitext(input_file)
+        _, output_extension = os.path.splitext(output_file)
 
-if __name__ == '__main__':
-    if len(argv) != 3:
-        print('Usage: program.exe input_file output_file')
-    else:
-        input_file = argv[1]
-        output_file = argv[2]
-        try:
-            convert_data(input_file, output_file)
+        if input_extension == '.xml':
+            with open(input_file, 'r') as file:
+                data = file.read()
+            converted_data = convert_from_xml(data, output_extension)
+        elif input_extension == '.json':
+            with open(input_file, 'r') as file:
+                data = json.load(file)
+            converted_data = convert_from_json(data, output_extension)
+        elif input_extension == '.yaml' or input_extension == '.yml':
+            with open(input_file, 'r') as file:
+                data = yaml.safe_load(file)
+            converted_data = convert_from_yaml(data, output_extension)
+        else:
+            print("Unsupported input file format.")
+            return
+
+        if converted_data is not None:
+            with open(output_file, 'w') as file:
+                file.write(converted_data)
             print("Conversion successful!")
-        except (IOError, ValueError) as e:
-            print(f"Error: {str(e)}")
+        else:
+            print("Conversion failed.")
+
+    def convert_from_xml(data, output_extension):
+        try:
+            if output_extension == '.json':
+                return json.dumps(xmltodict.parse(data), indent=4)
+            elif output_extension == '.yaml':
+                return yaml.dump(xmltodict.parse(data), indent=4)
+            else:
+                print("Unsupported output file format.")
+                return None
+        except Exception as e:
+            print("Error converting from XML:", str(e))
+            return None
+
+    def convert_from_json(data, output_extension):
+        try:
+            if output_extension == '.xml':
+                return xmltodict.unparse(data, pretty=True)
+            elif output_extension == '.yaml':
+                return yaml.dump(data, indent=4)
+            else:
+                print("Unsupported output file format.")
+                return None
+        except Exception as e:
+            print("Error converting from JSON:", str(e))
+            return None
+
+    def convert_from_yaml(data, output_extension):
+        try:
+            if output_extension == '.xml':
+                return xmltodict.unparse(data, pretty=True)
+            elif output_extension == '.json':
+                return json.dumps(data, indent=4)
+            else:
+                print("Unsupported output file format.")
+                return None
+        except Exception as e:
+            print("Error converting from YAML:", str(e))
+            return None
+
+    if __name__ == '__main__':
+        if len(sys.argv) != 3:
+            print('Usage: program.py input_file output_file')
+        else:
+            input_file = sys.argv[1]
+            output_file = sys.argv[2]
+            convert_data(input_file, output_file)
